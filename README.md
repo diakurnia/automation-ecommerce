@@ -1,70 +1,73 @@
 # AI Shopping Assistant
 
-Asisten belanja berbasis LangChain + Claude + Supabase pgvector + Shopify.
+An AI shopping assistant built with LangChain, Claude, Supabase pgvector, and Shopify.
 
-Pembeli mengobrol secara natural, agent mencari produk lewat hybrid semantic
-search (pgvector), mengecek stok/harga live ke Shopify, lalu menyusun
-rekomendasi dengan alasan — mengingat preferensi & budget lintas pesan.
+Shoppers chat naturally, the agent finds products through hybrid semantic
+search (pgvector), checks live stock/price against Shopify, then puts
+together a recommendation with reasoning — remembering preferences and
+budget across messages.
 
-## Arsitektur
+## Architecture
 
-- **Ingest** (batch): Shopify Admin API → embedding lokal multilingual
+- **Ingest** (batch): Shopify Admin API → local multilingual embeddings
   (`paraphrase-multilingual-MiniLM-L12-v2`, 384 dim) → Supabase pgvector.
 - **Query** (runtime): Streamlit chat → LangChain tool-calling agent (Claude)
   → tools (`search_products`, `check_stock`, `get_price`) → pgvector hybrid
-  search (RPC `match_products`) → rekomendasi + kartu produk.
+  search (RPC `match_products`) → recommendation + product cards.
 
 ## Setup
 
-1. Python **3.12** direkomendasikan (Python 3.14 punya masalah kompatibilitas
-   dengan pydantic/langchain saat ini).
+1. Python **3.12** is recommended (Python 3.14 currently has compatibility
+   issues with pydantic/langchain).
 
    ```bash
    python3.12 -m venv .venv
    .venv/bin/pip install -r requirements.txt
    ```
 
-2. Salin `.env.example` ke `.env`, isi kredensial:
-   - `ANTHROPIC_API_KEY` — dari https://console.anthropic.com/settings/keys
-   - `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` — dari Supabase project settings
-     (pakai **legacy service_role key**, bukan `sb_secret_...` yang baru,
-     untuk kompatibilitas dengan `supabase-py`)
-   - `SHOPIFY_STORE_DOMAIN` / `SHOPIFY_ADMIN_TOKEN` — Admin API access token
-     dengan scope `read_products` + `read_inventory`. Untuk app yang dibuat
-     lewat Shopify **Dev Dashboard** baru (bukan custom app legacy), token
-     tidak ditampilkan langsung di UI — perlu OAuth code exchange manual
-     (buka authorize URL, approve, tukar `code` jadi token via
+2. Copy `.env.example` to `.env` and fill in credentials:
+   - `ANTHROPIC_API_KEY` — from https://console.anthropic.com/settings/keys
+   - `SUPABASE_URL` / `SUPABASE_SERVICE_KEY` — from Supabase project settings
+     (use the **legacy service_role key**, not the newer `sb_secret_...` key,
+     for compatibility with `supabase-py`)
+   - `SHOPIFY_STORE_DOMAIN` / `SHOPIFY_ADMIN_TOKEN` — an Admin API access
+     token with `read_products` + `read_inventory` scopes. For apps created
+     through Shopify's newer **Dev Dashboard** (not the legacy custom app
+     flow), the token isn't shown directly in the UI — you need to complete
+     an OAuth code exchange manually (open the authorize URL, approve, copy
+     the `code` from the redirect URL, exchange it for a token via
      `POST /admin/oauth/access_token`).
 
-3. Jalankan schema SQL (`sql/001_init.sql`) di Supabase SQL Editor (aktifkan
-   ekstensi pgvector, buat tabel `products` + RPC `match_products`).
+3. Run the SQL schema (`sql/001_init.sql`) in the Supabase SQL Editor (enables
+   the pgvector extension, creates the `products` table + `match_products`
+   RPC).
 
-4. Ingest katalog:
+4. Ingest the catalog:
 
    ```bash
    .venv/bin/python -m src.ingest
    ```
 
-5. Jalankan app:
+5. Run the app:
 
    ```bash
    .venv/bin/streamlit run app.py
    ```
 
-   Ganti port kalau `8501` sudah dipakai proses lain:
+   Change the port if `8501` is already taken by another process:
    `--server.port 8502`.
 
-## Ganti model Claude
+## Switching the Claude model
 
-Ubah `ANTHROPIC_MODEL` di `.env` (mis. `claude-opus-4-8`, `claude-sonnet-4-6`).
-Restart Streamlit setelah mengubahnya.
+Change `ANTHROPIC_MODEL` in `.env` (e.g. `claude-opus-4-8`, `claude-sonnet-4-6`).
+Restart Streamlit after changing it.
 
-## Sinkronisasi ulang katalog
+## Re-syncing the catalog
 
-Jalankan ulang `python -m src.ingest` kapan pun produk di Shopify berubah —
-pipeline idempotent (upsert berdasarkan product id).
+Re-run `python -m src.ingest` whenever products change in Shopify — the
+pipeline is idempotent (upserts by product id).
 
-## Test
+## Tests
 
 ```bash
 .venv/bin/python -m pytest tests/ -v
