@@ -3,6 +3,10 @@ from src import config
 
 _cfg = config.load()
 
+_SHOP_QUERY = """
+{ shop { currencyCode } }
+"""
+
 _PRODUCTS_QUERY = """
 query($cursor: String) {
   products(first: 50, after: $cursor) {
@@ -41,6 +45,11 @@ def _post_graphql(query: str, variables: dict) -> dict:
     )
     resp.raise_for_status()
     return resp.json()
+
+
+def fetch_shop_currency() -> str:
+    data = _post_graphql(_SHOP_QUERY, {})
+    return data["data"]["shop"]["currencyCode"]
 
 
 def fetch_products() -> list[dict]:

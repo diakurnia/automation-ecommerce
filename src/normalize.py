@@ -1,4 +1,4 @@
-def normalize_product(raw: dict) -> dict:
+def normalize_product(raw: dict, currency: str = "IDR") -> dict:
     variants = raw.get("variants") or [{}]
     v0 = variants[0]
     qty = int(v0.get("inventoryQuantity") or 0)
@@ -11,7 +11,7 @@ def normalize_product(raw: dict) -> dict:
         "product_type": raw.get("productType", "") or "",
         "tags": raw.get("tags", []) or [],
         "price": price,
-        "currency": "IDR",
+        "currency": currency,
         "inventory_qty": qty,
         "in_stock": qty > 0,
         "image_url": image,

@@ -3,11 +3,12 @@ from src import shopify_client, normalize, embeddings, db
 
 def run() -> int:
     """Tarik produk Shopify, embed, upsert ke pgvector. Kembalikan jumlah produk."""
+    currency = shopify_client.fetch_shop_currency()
     raw = shopify_client.fetch_products()
     records, texts = [], []
     for r in raw:
         try:
-            rec = normalize.normalize_product(r)
+            rec = normalize.normalize_product(r, currency=currency)
         except Exception as e:  # noqa: BLE001
             print(f"skip {r.get('id')}: {e}")
             continue
