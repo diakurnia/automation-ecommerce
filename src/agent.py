@@ -19,8 +19,7 @@ SYSTEM = (
 
 
 def build_agent() -> AgentExecutor:
-    llm = ChatAnthropic(model=_cfg.anthropic_model,
-                        api_key=_cfg.anthropic_api_key, temperature=0.3)
+    llm = ChatAnthropic(model=_cfg.anthropic_model, api_key=_cfg.anthropic_api_key)
     prompt = ChatPromptTemplate.from_messages([
         ("system", SYSTEM),
         MessagesPlaceholder("chat_history"),

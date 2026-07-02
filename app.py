@@ -11,6 +11,19 @@ if "messages" not in st.session_state:
     st.session_state.messages = []  # list of (role, content)
 
 
+def _extract_text(output) -> str:
+    """Claude's tool-calling responses can return a list of content blocks
+    instead of a plain string; normalize to text either way."""
+    if isinstance(output, str):
+        return output
+    if isinstance(output, list):
+        return "\n".join(
+            block.get("text", "") for block in output
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+    return str(output)
+
+
 def _render_product_cards(result):
     for action, observation in result.get("intermediate_steps", []):
         if action.tool != "search_products_tool":
@@ -51,6 +64,7 @@ if prompt := st.chat_input("Tanya apa saja soal produk..."):
                 "input": prompt,
                 "chat_history": history,
             })
-        st.markdown(result["output"])
+        answer_text = _extract_text(result["output"])
+        st.markdown(answer_text)
         _render_product_cards(result)
-    st.session_state.messages.append(("assistant", result["output"]))
+    st.session_state.messages.append(("assistant", answer_text))
