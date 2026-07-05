@@ -72,3 +72,17 @@ pipeline is idempotent (upserts by product id).
 ```bash
 .venv/bin/python -m pytest tests/ -v
 ```
+
+## Retrieval eval
+
+`scripts/eval_retrieval.py` is a small "eval-lite" for the hybrid search
+retriever: a golden set of ~10 queries with an expected product or category,
+checked against the current live catalog.
+
+```bash
+.venv/bin/python scripts/eval_retrieval.py
+```
+
+Reports a hit-rate@3 and flags any query whose expected result didn't
+appear in the top 3. Useful as a quick regression check after changing the
+embedding model, prompt, or retriever filters.
